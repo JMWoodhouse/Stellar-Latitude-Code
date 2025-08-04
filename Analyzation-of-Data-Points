@@ -1,0 +1,40 @@
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.optimize import curve_fit
+from sklearn.metrics import r2_score
+
+x = np.linspace(0 , 0.55 , 1000)
+x_rad = [0.21817,0.17453,0.07854,0.10646,0.5236,0.19024,0.27053,0.20071,0.12566,0.24435,0.05585,0.31749,0.11513,0.11513,0.16572,0.29656,0.39424,
+0.07676,0.2983,0.13432,0.32098,0.10467]
+x_rad_err = [0.00873,0.00524,0.00524,0.01047,0.01745,0.01047,0.01222,0.01047,0.01396,0.01745,0.00349,0.00698,0.00698,0.00698,
+0.01047,0.01396,0.01047,0.00349,0.00349,0.00524,0.00524,0.00873]
+y_rad = [0.2404416, 0.2443504 ,0.2560768, 0.239848,  0.2324224, 0.2371152, 0.252168,0.2365216, 0.2455152, 0.2470832 ,0.2267552, 0.23928,0.23736,0.24016,0.23911,0.23038,0.23387,0.25045,0.23736,0.24487,0.23911,0.2618]
+y_rad_err = [0.00349,0.00349,0.00349,0.00105,0.00105,0.00122,0.00349,0.00349,0.0014,0.00105,0.00349,6.98131E-4,0.00349,0.00157,0.00349,0.00524,
+0.00105,0.00122,0.00349,0,0.00524,0.00175]
+
+print(len(x_rad) , len(y_rad) , len(x_rad_err) , len(y_rad_err))
+
+def my_func(x , A , B , C):
+    y = A + B * (np.sin(x) ** 2) + C * (np.sin(x) ** 4)
+    return y
+
+param, param_covar = curve_fit(my_func, x_rad , y_rad , p0 = [0.3 , -0.04 , -0.02])
+
+A , B , C = param
+r2 = r2_score(y_rad , my_func(x_rad , A , B , C))
+
+expected_curve = my_func(x,0.2568,-0.041818,-0.031189)
+fitted_curve = my_func(x , A , B , C)
+
+print(f'Your A value in degrees is {A*180 / np.pi} +- {param_covar[0,0] * 180 / np.pi}')
+print(f'Your B value in degrees is {B*180 / np.pi} +- {param_covar[1,1] * 180 / np.pi}')
+print(f'Your C value in degrees per day is {C*180 / np.pi} +- {param_covar[2,2] * 180 / np.pi}')
+print(f'Your R squared value is {r2}')
+plt.errorbar(x_rad , y_rad , xerr = x_rad_err , yerr = y_rad_err , fmt = 'o')
+plt.plot(x , expected_curve , color = 'pink')
+plt.plot(x, fitted_curve)
+plt.title('Longitudinal Velocity Against Latitude')
+plt.ylabel('Longitudinal Velocity (radians/day)')
+plt.xlabel('Latitude (radians)')
+plt.grid(True)
+plt.show()
