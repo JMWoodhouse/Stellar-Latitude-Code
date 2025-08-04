@@ -1,0 +1,65 @@
+import numpy as np
+
+x = float(input('Please input a value for the x: '))
+x_err = float(input('Please input a value for the x uncertainty: '))
+y = float(input('Please input a value for the y: '))
+y_err = float(input('Please input a value for the y uncertainty: '))
+B_0 = float(input('Please input a value for B_0 in degrees: '))
+x_center = 513.15
+x_center_err = 0.3
+y_center = 510.75
+y_center_err = 0.3
+R = 467.422
+R_err = 0.3184
+L_0 = 0
+P = 0
+
+def latitude(rho , theta , B_0):
+    B = np.arcsin(np.sin(B_0) * np.cos(rho) + np.cos(B_0) * np.sin(rho) * np.cos(-theta))
+    return B
+
+def longitude(rho , theta , lat):
+    L = np.arcsin(np.sin(rho) * np.sin(-theta) / np.cos(lat))
+    return L
+
+def sunspot_coords_err(x , x_err , y , y_err , x_center , x_center_err , y_center , y_center_err , R , R_err , B_0):
+    xnew = x - x_center
+    xnew_err = ((x_center_err ** 2) + (x_err) ** 2) ** 0.5
+    ynew = y - y_center
+    ynew_err = ((y_center_err ** 2) + (y_err ** 2)) ** 0.5
+          
+    theta = np.arctan2(xnew , ynew)
+    theta_err_1 = -((xnew * ynew_err) / ((xnew ** 2) + (ynew ** 2)))
+    theta_err_2 = ((ynew * xnew_err) / ((xnew ** 2) + (ynew ** 2)))
+    theta_err = ((theta_err_1 ** 2) + (theta_err_2) ** 2) ** 0.5
+    if theta < 0:
+        theta += 2 * np.pi
+    
+    r = (xnew ** 2 + ynew ** 2) ** 0.5
+    r_err_1 = xnew_err * ((xnew / ((xnew ** 2) + ynew ** 2) ** 0.5))
+    r_err_2 = ynew_err * ((ynew / ((xnew ** 2) + ynew ** 2) ** 0.5))
+    r_err = ((r_err_1 ** 2) + (r_err_2 ** 2)) ** 0.5
+    
+    rho  = np.arcsin(r / R) - np.radians(0.53 * (r / (2 * R)))
+    rho_err_1 = (r_err / R) * ((1 / ((1 - (r / R) ** 2) ** 0.5)) - 0.265)
+    rho_err_2 = (r * R_err / (R ** 2)) * ((1 / ((1 - (r / R) ** 2) ** 0.5)) - 0.265) 
+    rho_err = ((rho_err_1 ** 2) + (rho_err_2) ** 2) ** 0.5
+    
+    B_0_rad = np.radians(B_0)
+    
+    B = latitude(rho , theta , B_0_rad)
+    B_err_1 = (rho_err / ((1 - np.sin(B) ** 2) ** 0.5)) * ((-1 * np.sin(B_0_rad) * np.sin(rho)) + (np.cos(B_0_rad) * np.cos(-theta) * np.cos(rho)))
+    B_err_2 = (theta_err / ((1 - np.sin(B) ** 2) ** 0.5)) * (-np.sin(-1 * theta) * np.sin(rho) * np.cos(B_0_rad))
+    B_err = ((B_err_1) ** 2 + (B_err_2) ** 2) ** 0.5
+    print(f'Your latitude in degrees is {np.degrees(B)} +- {np.degrees(B_err)}')
+    
+    L = longitude(rho , theta , B)
+    L_err_1 = (rho_err / (1 - np.sin(L))) * np.cos(rho) * np.cos(-theta) / np.cos(B)
+    L_err_2 = (theta_err / (1 - np.sin(L))) * np.sin(rho) * np.sin(-theta) / np.cos(B)
+    L_err_3 = (B_err / (1 - np.sin(L))) * np.sin(rho) * np.cos(-1) * (np.tan(B) / np.cos(B))
+    L_err = ((L_err_1 ** 2) + (L_err_2 ** 2) + (L_err_3 ** 2)) ** 0.5
+    
+    print(f'Your Longitude in degrees is {np.degrees(L)} +- {np.degrees(L_err)}')
+    return
+
+sunspot_coords_err(x , x_err , y , y_err , x_center , x_center_err , y_center , y_center_err , R , R_err , B_0)
